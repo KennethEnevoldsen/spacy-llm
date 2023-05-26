@@ -80,22 +80,16 @@ jobs:
           python -c "import $MODULE_NAME" -Werror
 
       - name: Pip Cache Path
-        if: startsWith(runner.os, 'Linux')
-        run: echo "PIP_CACHE=~/.cache/pip" >> $GITHUB_ENV
-      
-      - name: Pip Cache Path
-        if: startsWith(runner.os, 'macOS')
-        run: echo "PIP_CACHE=~/Library/Caches/pip" >> $GITHUB_ENV
-      
-      - name: Pip cache path
-        if: startsWith(runner.os, 'Windows')
-        run: echo "PIP_CACHE=~\AppData\Local\pip\Cache" >> $GITHUB_ENV
+        id: pip-cache-dir
+        if: ${{ !startsWith(runner.os, 'Windows') }}
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
       - name: Restore Pip Cache
         id: pip-cache-restore
+        if: ${{ !startsWith(runner.os, 'Windows') }}
         uses: actions/cache/restore@v3
         with:
-          path: ${{ env.PIP_CACHE }}
+          path: ${{ steps.pip-cache-dir.outputs.dir }}
           key: test-cache-${{ runner.os }}-${{ matrix.python_version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-dev.txt') }}
 
       - name: Install test requirements
@@ -107,6 +101,7 @@ jobs:
       
       - name: Save Pip Cache
         id: pip-cache-save
+        if: ${{ !startsWith(runner.os, 'Windows') }}
         uses: actions/cache/save@v3
         with:
           path: ${{ steps.pip-cache-dir.outputs.dir }}

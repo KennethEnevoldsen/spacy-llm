@@ -34,12 +34,6 @@ jobs:
             python_version: "3.9"
           - os: windows-latest
             python_version: "3.10"
-          - os: ubuntu-latest
-            pip_path: ~/.cache/pip
-          - os: macos-latest
-            pip_path: ~/Library/Caches/pip
-          - os: windows-latest
-            pip_path: ~\AppData\Local\pip\Cache
 
     runs-on: ${{ matrix.os }}
 
@@ -85,11 +79,23 @@ jobs:
         run: |
           python -c "import $MODULE_NAME" -Werror
 
+      - name: Pip Cache Path
+        if: startsWith(runner.os, 'Linux')
+        run: echo "PIP_CACHE=~/.cache/pip" >> $GITHUB_ENV
+      
+      - name: Pip Cache Path
+        if: startsWith(runner.os, 'macOS')
+        run: echo "PIP_CACHE=~/Library/Caches/pip" >> $GITHUB_ENV
+      
+      - name: Pip cache path
+        if: startsWith(runner.os, 'Windows')
+        run: echo "PIP_CACHE=~\AppData\Local\pip\Cache" >> $GITHUB_ENV
+
       - name: Restore Pip Cache
         id: pip-cache-restore
         uses: actions/cache/restore@v3
         with:
-          path: ${{ matrix.pip_path }}
+          path: ${{ env.PIP_CACHE }}
           key: test-cache-${{ runner.os }}-${{ matrix.python_version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-dev.txt') }}
 
       - name: Install test requirements
